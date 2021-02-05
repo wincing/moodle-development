@@ -18,7 +18,7 @@
  * The main mod_scoring configuration form.
  *
  * @package     mod_scoring
- * @copyright   2020 Jun Deng <1013991382@qq.com>
+ * @copyright   2020 Jun Deng
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -52,6 +52,8 @@ class mod_scoring_mod_form extends moodleform_mod {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addHelpButton('name', 'scoringname', 'mod_scoring');
+
+        // 上传题目文件
 
         // Adding the standard "intro" and "introformat" fields.
         if ($CFG->branch >= 29) {

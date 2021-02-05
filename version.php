@@ -18,7 +18,7 @@
  * Plugin version and other meta-data are defined here.
  *
  * @package     mod_scoring
- * @copyright   2020 Jun Deng <1013991382@qq.com>
+ * @copyright   2020 Jun Deng
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -26,6 +26,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_scoring';
 $plugin->release = '0.1.0';
-$plugin->version = 2020100502;
+$plugin->version = 2020100505;
 $plugin->requires = 2020061500;
 $plugin->maturity = MATURITY_ALPHA;

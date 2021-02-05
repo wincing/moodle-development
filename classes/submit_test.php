@@ -15,35 +15,41 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The assignment submitted event
+ * The assigning test event
  *
  * @package     mod_scoring
  * @copyright  2020 Jun Deng
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/formslib.php");
 
-class mod_scoring_submit_assignment extends moodleform {
+class mod_scoring_submit_test extends moodleform
+{
     //Add elements to form
-    public function definition() {
+    public function definition()
+    {
         global $CFG;
 
         $mform = $this->_form; // Don't forget the underscore!
 
-        // upload student answer
-        $mform->addElement('filemanager', 'upload_assignment', 'upload assignment');
+        // upload question
+        $mform->addElement('filemanager', 'upload_question', 'upload question');
+
+        // upload answer
+        $mform->addElement('filemanager', 'upload_answer', 'upload answer');
 
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
 
         $this->add_action_buttons();
     }
+
     //Custom validation should be added here
-    function validation($data, $files) {
+    function validation($data, $files)
+    {
         return array();
     }
 }

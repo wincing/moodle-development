@@ -16,42 +16,35 @@
 
 /**
  * Prints an instance of mod_scoring.
+ * For teacher, it provide the ability to uploadtest file and answer file.
+ * For students, it provide the ability to upload the assignment file .
  *
  * @package     mod_scoring
- * @copyright   2020 Jun Deng <1013991382@qq.com>
- * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  2020 Jun Deng
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require(__DIR__.'/../../config.php');
 require_once(__DIR__.'/lib.php');
+require_once ('./locallib.php');
 require_once(__DIR__.'/classes/submit_assignment.php');
-require_once(__DIR__.'/classes/submit_question.php');
+require_once(__DIR__.'/classes/submit_test.php');
 
 global  $renderer, $USER;
-// Course_module ID, or
-$id = optional_param('id', 0, PARAM_INT);
+$id = required_param('id', PARAM_INT);  // Course Module ID.
 
-// module instance id.
-$s  = optional_param('s', 0, PARAM_INT);
+$urlparams = array('id' => $id);
 
-if ($id) {
-    $cm             = get_coursemodule_from_id('scoring', $id, 0, false, MUST_EXIST);
-    $course         = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
-    $moduleinstance = $DB->get_record('scoring', array('id' => $cm->instance), '*', MUST_EXIST);
-} else if ($s) {
-    $moduleinstance = $DB->get_record('scoring', array('id' => $n), '*', MUST_EXIST);
-    $course         = $DB->get_record('course', array('id' => $moduleinstance->course), '*', MUST_EXIST);
-    $cm             = get_coursemodule_from_instance('scoring', $moduleinstance->id, $course->id, false, MUST_EXIST);
-} else {
-    print_error(get_string('missingidandcmid', 'mod_scoring'));
-}
+$url = new moodle_url('/mod/php/view.php', $urlparams);
+list ($course, $cm) = get_course_and_cm_from_cmid($id, 'scoring');
 
-require_login($course, true, $cm);
+$scoringid = $cm->instance;
 
 $modulecontext = context_module::instance($cm->id);
 
-$PAGE->set_url('/mod/scoring/view.php', array('id' => $cm->id));
-$PAGE->set_title(format_string($moduleinstance->name));
+require_login($course, true, $cm);
+
+$PAGE->set_url($url);
 $PAGE->set_heading('Automatic Scoring');
 $PAGE->set_context($modulecontext);
 $PAGE->set_title('Automatic Scoring');
@@ -59,73 +52,79 @@ $PAGE->set_title('Automatic Scoring');
 
 echo $OUTPUT->header();
 
-// 检查访客身份
-if (has_capability('mod/scoring:getresult', $modulecontext)) {
-//    // 查看提交情况
-//    $suburl = new moodle_url('/mod/scoring/view_submission.php', array('id'=>$id));
-//    echo $OUTPUT->single_button($suburl, 'Viewing of submissions');
-//
-//    // 获取评分结果
-//    $scoringurl = new moodle_url('/mod/scoring/result.php', array('id'=>$id));
-//    echo $OUTPUT->single_button($scoringurl, 'Turn on auto-scoring');
-
-    $mform = new mod_scoring_submit_question();
+// 检查用户权限
+if (has_capability('mod/scoring:getresults', $modulecontext)) { // 教师角色
+    $mform = new mod_scoring_submit_test();
+    $submissionquestion = mod_scoring_get_question($scoringid);
+    $submissionanswer = mod_scoring_get_answer($scoringid);
 
     // 检测表是否被提交
-    if ($data = $mform->get_data()) {
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('view.php', $urlparams));
+        return;
+    } else if (($data = $mform->get_data())) {
+        // 获取当前scoring实例id
+        $data->scoringid = $scoringid;
+
+        // 保存题目文本提交记录
+        $itemid = mod_scoring_save_questions($data);
+
         // 储存题目文本
-        $draftitemid = file_get_submitted_draft_itemid('uploadquestion');
-        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_scoring', 'question', $USER->id);
+        $draftitemid = file_get_submitted_draft_itemid('upload_question');
+        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_questions', $itemid);
+
+        // 保存答案文本提交记录
+        $itemid = mod_scoring_save_answers($data);
 
         // 储存答案文本
-        $draftitemid = file_get_submitted_draft_itemid('uploadanswer');
-        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_scoring', 'answer', $USER->id);
-        redirect(new moodle_url("www.baidu.com"));
-
-    } else if (($data = $mform->get_data())) {
-        // Form has been submitted.
-        $draftitemid = file_get_submitted_draft_itemid('attachment_filemanager');
-        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_learn', 'submission', 0);
-        $data->phpid = $phpid;
-        $data->code = $data->content_editor;
-        mod_php_save_submission($data);
+        $draftitemid = file_get_submitted_draft_itemid('upload_answer');
+        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_answers', $itemid);
     } else {
-        // Form has not been submitted or there was an error
-        // Just display the form
         $mform->set_data(array('id' => $id));
+        // 是否已经上传
+        if ($submissionquestion) {
+            $draftitemid = 0;            // 通过传引用获取$draftitemid的值
+            file_prepare_draft_area($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_questions', $submissionquestion->id);
+            $mform->set_data(array('upload_question' => $draftitemid));
+        }
+
+        // 是否已经上传
+        if ($submissionanswer) {
+            $draftitemid = 0;            // 通过传引用获取$draftitemid的值
+            file_prepare_draft_area($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_answers', $submissionanswer->id);
+            $mform->set_data(array('upload_answer' => $draftitemid));
+        }
         $mform->display();
     }
+} else { // 学生角色
+    $mform = new mod_scoring_submit_assignment();
+    $submission = mod_scoring_get_submission($scoringid);
 
-} else {
-    // 输出题目文本信息
-    $fs = get_file_storage();
+    // 检测表是否被提交
+    if ($mform->is_cancelled()) {
+        redirect(new moodle_url('view.php', $urlparams));
+        return;
+    } else if (($data = $mform->get_data())) {
+        // 获取当前scoring实例id
+        $data->scoringid = $scoringid;
 
-    // Prepare file record object
-    $fileinfo = array(
-        'component' => 'mod_php',     // usually = table name
-        'filearea' => 'submission',     // usually = table name
-        'itemid' => 0,               // usually = ID of row in table
-        'contextid' => 69, // ID of context
-        'filepath' => '/',           // any path beginning and ending in /
-        'filename' => 'acwing学习目录.txt'); // any filename
+        // 保存作业文本提交记录
+        $itemid = mod_scoring_save_submission($data);
 
-    // Get file
-    $file = $fs->get_file($fileinfo['contextid'], $fileinfo['component'], $fileinfo['filearea'],
-        $fileinfo['itemid'], $fileinfo['filepath'], $fileinfo['filename']);
-
-    // Read contents
-    if ($file) {
-        echo '<pre>';
-        $contents = $file->get_content();
-        echo $contents;
-        echo '</pre>';
-        echo '<HR style="border:3 double #987cb9" width="80%" color=#987cb9 SIZE=3>';
+        // 储存作业文本
+        $draftitemid = file_get_submitted_draft_itemid('upload_assignment');
+        file_save_draft_area_files($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_submissions', $itemid);
     } else {
-        // file doesn't exist - do something
+        $mform->set_data(array('id' => $id));
+
+        // 是否已经上传
+        if ($submission) {
+            $draftitemid = 0;            // 通过传引用获取$draftitemid的值
+            file_prepare_draft_area($draftitemid, $cm->context->id, 'mod_scoring', 'scoring_submissions', $submission->id);
+            $mform->set_data(array('upload_assignment' => $draftitemid));
+        }
+        $mform->display();
     }
-    // 建立答案提交对象
-    $mform = new submit_assignment();
-    $mform->display();
 }
 
 echo $OUTPUT->footer();

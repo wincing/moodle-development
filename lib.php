@@ -18,7 +18,7 @@
  * Library of interface functions and constants.
  *
  * @package     mod_scoring
- * @copyright   2020 Jun Deng <1013991382@qq.com>
+ * @copyright   2020 Jun Deng
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

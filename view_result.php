@@ -18,7 +18,7 @@
  * Display the scoring result.
  *
  * @package     mod_scoring
- * @copyright   2020 Jun Deng <1013991382@qq.com>
+ * @copyright   2020 Jun Deng
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,8 +27,8 @@ require_once(__DIR__.'/lib.php');
 require_once(__DIR__.'/../../lib/filelib.php');
 
 // Course_module ID
-$id = optional_param('id', 0, PARAM_INT);
+////$id = optional_param('id', 0, PARAM_INT);
 
 
-$draftitemid = file_get_submitted_draft_itemid('getfiles');
+$draftitemid = file_get_submitted_draft_itemid('');
 echo $draftitemid;
