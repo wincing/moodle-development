@@ -32,7 +32,7 @@ class mod_scoring_submit_assignment extends moodleform {
     public function definition() {
         global $CFG;
 
-        $mform = $this->_form; // Don't forget the underscore!
+        $mform = $this->_form;
 
         // upload student answer
         $mform->addElement('filemanager', 'upload_assignment', 'upload assignment');

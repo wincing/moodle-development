@@ -37,7 +37,7 @@ $capabilities = array(
     ),
 
     // participate in module
-    'mod/scoring:attempt' => array(
+    'mod/scoring:attend' => array(
         'riskbitmask' => RISK_SPAM,
 
         'captype' => 'write',
@@ -50,18 +50,7 @@ $capabilities = array(
         )
     ),
 
-    // calling the script to score
-    'mod/scoring:callscript' => array(
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'archetypes' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW
-        )
-    ),
-
-    // get results after scored
+    // starting auto-scoring
     'mod/scoring:getresults' => array(
 
         'captype' => 'read',

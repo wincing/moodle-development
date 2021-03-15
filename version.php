@@ -26,6 +26,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_scoring';
 $plugin->release = '0.1.0';
-$plugin->version = 2020100505;
+$plugin->version = 2020100510;
 $plugin->requires = 2020061500;
 $plugin->maturity = MATURITY_ALPHA;

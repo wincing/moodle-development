@@ -48,24 +48,16 @@ class mod_scoring_mod_form extends moodleform_mod {
             $mform->setType('name', PARAM_CLEANHTML);
         }
 
-        // 为name元素添加限制
+        // Set rule for 'name' element
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addHelpButton('name', 'scoringname', 'mod_scoring');
 
-        // 上传题目文件
+        //
+        $this->standard_intro_elements("upload question here");
 
-        // Adding the standard "intro" and "introformat" fields.
-        if ($CFG->branch >= 29) {
-            $this->standard_intro_elements();
-        } else {
-            $this->add_intro_editor();
-        }
-
-        // Add standard elements.
         $this->standard_coursemodule_elements();
-
-        // Add standard buttons.
+        $this->standard_grading_coursemodule_elements();
         $this->add_action_buttons();
     }
 }

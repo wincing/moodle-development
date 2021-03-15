@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The assigning test event
+ * The upload answer event
  *
  * @package     mod_scoring
  * @copyright  2020 Jun Deng
@@ -26,17 +26,14 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once("$CFG->libdir/formslib.php");
 
-class mod_scoring_submit_test extends moodleform
+class mod_scoring_submit_answer extends moodleform
 {
     //Add elements to form
     public function definition()
     {
         global $CFG;
 
-        $mform = $this->_form; // Don't forget the underscore!
-
-        // upload question
-        $mform->addElement('filemanager', 'upload_question', 'upload question');
+        $mform = $this->_form;
 
         // upload answer
         $mform->addElement('filemanager', 'upload_answer', 'upload answer');

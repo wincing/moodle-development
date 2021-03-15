@@ -23,14 +23,6 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
-/*
- * 返回评分结果页面链接
- */
-function scroing_show_result($allresponses, $cm) {
-
-}
-
 /**
  * Persist student's assignment submission record in scoring_submissions table
  * @param $submission
@@ -43,23 +35,17 @@ function mod_scoring_save_submission($submission) {
     $submission->userid = $USER->id;
     $submission->timecreated = time();
 
+    $record =  array('scoringid' => $submission->scoringid, 'userid' => $USER->id);
+    $exists = $DB->get_record('scoring_submissions', $record);
+    if ($exists) {
+        $DB->delete_records('scoring_submissions', $record);
+        $DB->delete_records('files', array('userid' => $USER->id, 'component' => 'mod_scoring',
+            'filearea' => 'scoring_submissions', 'itemid' => $exists->id));
+    }
+
     return $DB->insert_record('scoring_submissions', $submission);
 }
 
-/**
- * Persist question submission record in scoring_questions table
- * @param $submission
- * @return bool|int
- * @throws dml_exception
- */
-function mod_scoring_save_questions($submission) {
-    global $DB, $USER;
-
-    $submission->userid = $USER->id;
-    $submission->timecreated = time();
-
-    return $DB->insert_record('scoring_questions', $submission);
-}
 
 /**
  * Persist answer submission record in scoring_questions table
@@ -73,7 +59,31 @@ function mod_scoring_save_answers($submission) {
     $submission->userid = $USER->id;
     $submission->timecreated = time();
 
+    $record =  array('scoringid' => $submission->scoringid, 'userid' => $USER->id);
+    $exists = $DB->get_record('scoring_answers', $record);
+    if ($exists) {
+        $DB->delete_records('scoring_answers', $record);
+        $DB->delete_records('files', array('userid' => $USER->id, 'component' => 'mod_scoring',
+            'filearea' => 'scoring_answers', 'itemid' => $exists->id));
+    }
+
     return $DB->insert_record('scoring_answers', $submission);
+}
+
+/**
+ * Persist scoring results record in scoring_questions table
+ * @param $submission
+ * @return bool|int
+ * @throws dml_exception
+ */
+function mod_scoring_save_results($result) {
+    global $DB, $USER;
+
+    $record =  array('scoringid' => $result->scoringid, 'userid' => $result->userid, 'tid' => $result->tid);
+    $exists = $DB->get_record('scoring_results', $record);
+    if(!$exists) {
+        $DB->insert_record('scoring_results', $result);
+    }
 }
 
 /**
@@ -95,12 +105,8 @@ function mod_scoring_get_submission($scoringid) {
  * @return mixed
  * @throws dml_exception
  */
-function mod_scoring_get_question($scoringid) {
-    global $DB, $USER;
+function mod_scoring_show_question($scoringid) {
 
-    $submission = $DB->get_record('scoring_questions', array('scoringid' => $scoringid, 'userid' => $USER->id));
-
-    return $submission;
 }
 
 /**
@@ -114,4 +120,15 @@ function mod_scoring_get_answer($scoringid) {
     $submission = $DB->get_record('scoring_answers', array('scoringid' => $scoringid, 'userid' => $USER->id));
 
     return $submission;
+}
+
+/**
+ * @param $s
+ * @return string
+ */
+function mod_scoring_txt_to_csv($s) {
+    $str = str_replace(PHP_EOL, '', $s);
+    $str = str_replace('"', '"""', $str);
+    $str = '"'.$str.'"';
+    return $str;
 }

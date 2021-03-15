@@ -53,11 +53,19 @@ function scoring_supports($feature) {
  * @return int The id of the newly inserted record.
  */
 function scoring_add_instance($moduleinstance, $mform = null) {
-    global $DB;
+    global $DB, $USER;
 
+    $context = context_course::instance($moduleinstance->course);
+    $contextid = $context->id;
+
+    $moduleinstance->userid = $USER->id;
     $moduleinstance->timecreated = time();
 
     $id = $DB->insert_record('scoring', $moduleinstance);
+
+    // 储存题目文本
+    $draftitemid = file_get_submitted_draft_itemid('upload_question');
+    file_save_draft_area_files($draftitemid, $contextid, 'mod_scoring', 'scoring_questions', $id);
 
     return $id;
 }
@@ -73,10 +81,24 @@ function scoring_add_instance($moduleinstance, $mform = null) {
  * @return bool True if successful, false otherwise.
  */
 function scoring_update_instance($moduleinstance, $mform = null) {
-    global $DB;
+    global $DB, $USER;
+
+    $context = context_course::instance($moduleinstance->course);
+    $contextid = $context->id;
 
     $moduleinstance->timemodified = time();
     $moduleinstance->id = $moduleinstance->instance;
+
+    $exists = $DB->get_record('files', array('itemid' => $moduleinstance->id, 'component' => 'mod_scoring',
+        'filearea' => 'scoring_questions'));
+
+    if ($exists) {
+        $DB->delete_records('files', array('itemid' => $moduleinstance->id, 'component' => 'mod_scoring',
+            'filearea' => 'scoring_questions'));
+    }
+
+    $draftitemid = file_get_submitted_draft_itemid('upload_question');
+    file_save_draft_area_files($draftitemid, $contextid, 'mod_scoring', 'scoring_questions', $moduleinstance->id);
 
     return $DB->update_record('scoring', $moduleinstance);
 }
@@ -96,6 +118,17 @@ function scoring_delete_instance($id) {
     }
 
     $DB->delete_records('scoring', array('id' => $id));
+
+    // delete question text from files table
+    $exists = $DB->get_record('files', array('itemid' => $id, 'component' => 'mod_scoring',
+        'filearea' => 'scoring_questions'));
+
+    if (!$exists) {
+        return false;
+    }
+
+    $DB->delete_records('files', array('itemid' => $id, 'component' => 'mod_scoring',
+        'filearea' => 'scoring_questions'));
 
     return true;
 }
